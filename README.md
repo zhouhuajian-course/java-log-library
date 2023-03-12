@@ -1,4 +1,8 @@
-# Java 日志库
+# Java 日志框架
+
+logging framework / logging library
+
+framework for logging
 
 ## logback
 

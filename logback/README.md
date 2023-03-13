@@ -4,6 +4,101 @@
 
 https://github.com/qos-ch/logback
 
+## slf4j 如何绑定(bind) 具体实现框架 logback
+
+1. org.slf4j.LoggerFactory.getLogger(java.lang.String)
+    ```text
+    public static Logger getLogger(String name) {
+       ILoggerFactory iLoggerFactory = getILoggerFactory();
+       return iLoggerFactory.getLogger(name);
+    }
+    ```
+2. org.slf4j.LoggerFactory.getILoggerFactory
+    ```text
+    public static ILoggerFactory getILoggerFactory() {
+        return getProvider().getLoggerFactory();
+    }
+    ```
+3. org.slf4j.LoggerFactory.getProvider
+4. org.slf4j.LoggerFactory.performInitialization
+5. org.slf4j.LoggerFactory.bind
+6. org.slf4j.LoggerFactory.findServiceProviders
+   这步是关键，找所有的SLF4J服务/业务提供者，查找classpath下的所有 实现 SLF4JServiceProvider 的类，
+   生成一个ArrayList providersList size = 1
+          0 = {LogbackServiceProvider@929}
+    ```text
+    static List<SLF4JServiceProvider> findServiceProviders() {
+        ClassLoader classLoaderOfLoggerFactory = LoggerFactory.class.getClassLoader();
+        ServiceLoader<SLF4JServiceProvider> serviceLoader = getServiceLoader(classLoaderOfLoggerFactory);
+        List<SLF4JServiceProvider> providerList = new ArrayList();
+        Iterator<SLF4JServiceProvider> iterator = serviceLoader.iterator();
+
+        while(iterator.hasNext()) {
+            safelyInstantiate(providerList, iterator);
+        }
+
+        return providerList;
+    }
+    ```
+7. ```text
+    List<SLF4JServiceProvider> providersList = findServiceProviders();
+    reportMultipleBindingAmbiguity(providersList);
+    // 提供者列表不为null并且不为空
+    if (providersList != null && !providersList.isEmpty()) {
+        // 获取第一个提供者
+        PROVIDER = (SLF4JServiceProvider)providersList.get(0);
+        // 提供者初始化
+        PROVIDER.initialize();
+        // 初始化状态 3
+        INITIALIZATION_STATE = 3;
+        reportActualBinding(providersList);
+    } else {
+        INITIALIZATION_STATE = 4;
+        Util.report("No SLF4J providers were found.");
+        Util.report("Defaulting to no-operation (NOP) logger implementation");
+        Util.report("See https://www.slf4j.org/codes.html#noProviders for further details.");
+        Set<URL> staticLoggerBinderPathSet = findPossibleStaticLoggerBinderPathSet();
+        reportIgnoredStaticLoggerBinders(staticLoggerBinderPathSet);
+    }
+    ```
+8. ch.qos.logback.classic.spi.LogbackServiceProvider.initialize
+9. ch.qos.logback.classic.spi.LogbackServiceProvider.getLoggerFactory
+
+   返回默认的Logger上下文，实现ILoggerFactory
+
+   `this.defaultLoggerContext = new LoggerContext();`
+
+   `public class LoggerContext extends ContextBase implements ILoggerFactory, LifeCycle {`
+
+    ```text
+     public ILoggerFactory getLoggerFactory() {
+         return defaultLoggerContext;
+     
+         //  if (!initialized) {
+         //      return defaultLoggerContext;
+         //  
+     
+         //  if (contextSelectorBinder.getContextSelector() == null) {
+         //      throw new IllegalStateException("contextSelector cannot be null. See also " + NULL_CS_URL);
+         //  }
+         //  return contextSelectorBinder.getContextSelector().getLoggerContext();
+     }
+     ```
+10. ch.qos.logback.classic.LoggerContext.getLogger(java.lang.String)
+
+最重要的类是 LoggerFactory，Logger是接口，最终获取到的 logger 是具体框架的 Logger 类对象
+
+结论：在具体实现框架中提供实现了SLF4JServiceProvider的类，例如logback的LogbackServiceProvider，
+SLF4J会生成LogbackServiceProvider的实例，调用其initialize方法，然后调用getLoggerFactory获取真正的Logback里面的日志工厂，
+也就是LoggerContext
+最后调用Logback日志工厂LoggerContext里面的getLogger获取具体的日志实例。
+
+## slf4j 源码中的 I 前缀
+
+可能表示 Interface，当一个类是 Interface 的时候，前缀 I 可加可不加
+
+slf4j的ILoggerFactory可能是为了和LoggerFactory进行区分，避免重名
+
 ## synchronous and asynchronous logging
 
 同步 和 异步 日志
@@ -72,3 +167,34 @@ Logging in OSGI Enterprise Applications, by Ekkehard Gentz
 ![performance-01.png](performance-01.png)
 
 ![performance-02.png](performance-02.png)
+
+## 工作线程 worker thread
+
+a dedicated worker thread 一个专用的工作线程
+
+## 架构、设计原理、创始人
+
+architecture, design rationale, founder
+
+## requires the presence of slf4j-api.jar and logback-core.jar
+
+Logback-classic module requires the presence of slf4j-api.jar and logback-core.jar in addition to logback-classic.jar on the classpath.
+
+## 绝大多少情况 使用的都是 slf4j 的 类，不会注意到 logback 的存在
+
+slf4j Logger和LoggerFactory
+
+Note that the above example does not reference any logback classes. In most cases, as far as logging is concerned, your classes will only need to import SLF4J classes. Thus, the vast majority, if not all, of your classes will use the SLF4J API and will be oblivious to the existence of logback.
+
+注意，上面的示例没有引用任何logback类。在大多数情况下，就日志记录而言，您的类只需要导入SLF4J类。因此，绝大多数(如果不是全部的话)类将使用SLF4J API，并且不会注意到logback的存在。
+
+## 默认 Appender
+
+By virtue of logback's default configuration policy, when no default configuration file is found, logback will add a ConsoleAppender to the root logger.
+
+没有默认配置文件情况下，logback会加一个 ConsoleAppender 到 根 logger (root logger)
+
+## logback-core
+
+抽离出 logback-core 是为了让代码更好地复用
+

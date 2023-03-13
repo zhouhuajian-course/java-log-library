@@ -1,8 +1,29 @@
-# logback
+# Logback
 
 ## source repository
 
 https://github.com/qos-ch/logback
+
+## synchronous and asynchronous logging
+
+同步 和 异步 日志
+
+Log4j 1.2 as well as logback have supported asynchronous logging for many years by the way of AsyncAppender. This appender essentially collects newly created logging events, as produced by the application, into a circular buffer. The events in this circular buffer are then processed by a dedicated worker thread which writes the events to their destination, be it a file, a remote server or a database.
+
+## logback version
+
+**STABLE version (ACTIVELY DEVELOPED)**
+
+1.3.5 支持 Java EE 需要 SLF4J 2.0.4 和 JDK 8  
+The current actively developed version of logback supporting Java EE (java.* namespace) is 1.3.5. It requires SLF4J version 2.0.4 and JDK 8.
+
+1.4.5 支持 Jakarta EE 需要 SLF4J 2.0.4 和 JDK 11  
+The current actively developed version of logback supporting Jakarta EE (jakarta.* namespace) is 1.4.5. It requires SLF4J version 2.0.4 and JDK 11.
+
+**Older stable version (INACTIVE)**
+
+1.2.11 比较老的稳定版本  
+The older stable logback version is 1.2.11.
 
 ## logback.qos.ch
 
@@ -32,3 +53,22 @@ This page allows you to translate a log4j.properties file into a logback.xml con
 Canonize logback.xml  规范 logback.xml 转换 logback.xml文件 为更加规范的格式
 
 This service allows you to transform logback.xml files into canonical or standard form. The resulting logback.xml file targets logback version 1.3.0 or later. Note that both logback 1.3 and 1.4 support 1.2 configuration files without change.
+
+## third-party tools 第三方工具
+
+## articles and presentations 文章和代表文章
+
+A Guide to Logback by Eric Goebelbecker  
+Solving Your Logging Problems with Logback by Eugen Paraschiv  
+Migrating off of Log4j 2.x by Thomas Broyer  
+Jetty/Tutorial/Sifting Logs with Logback by Shirly Dekker Boulay  
+Enterprise Spring Best Practices by Gordon Dickens  
+Logback project, by Ceki Gülcü and Sébastien Pennec.  
+Logback: Evolving Java Logging by Geoffrey Wiseman  
+Logging in OSGI Enterprise Applications, by Ekkehard Gentz  
+
+## performance
+
+![performance-01.png](performance-01.png)
+
+![performance-02.png](performance-02.png)

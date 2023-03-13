@@ -7,3 +7,7 @@ framework for logging
 ## logback
 
 [logback](./logback/README.md)
+
+## Java Version
+
+Java 17
